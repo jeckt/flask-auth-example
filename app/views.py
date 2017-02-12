@@ -5,9 +5,6 @@ from app import app, db, lm
 from .forms import LoginForm, RegistrationForm
 from .models import User
 
-# TODO(steve): Add logout and proper index page
-# TODO(steve): convert to using database and SQLAlchemy
-
 @app.route("/", methods = ['GET'])
 @app.route("/index", methods = ['GET'])
 @login_required
