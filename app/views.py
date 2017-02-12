@@ -19,6 +19,7 @@ def index():
 def login():
     if g.user is not None and g.user.is_authenticated:
         return redirect(url_for('index'))
+
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
@@ -31,7 +32,7 @@ def login():
             flash('Incorrect Password.')
             return redirect(url_for('login'))
 
-        login_user(user)
+        login_user(user, remember = form.remember_me.data)
 
         flash('Logged in successfuly for {}.'.format(username))
         return redirect(request.args.get('next') or url_for('index'))
@@ -49,8 +50,13 @@ def logout():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
+        username = form.username.data
+        if User.query.filter_by(username=username).first():
+            flash('Username "%s" already exists.' % (username))
+            return redirect(url_for('register'))
+
         user = User(
-            username = form.username.data,
+            username = username,
             email = form.email.data,
         )
         user.hash_password(form.password.data)
