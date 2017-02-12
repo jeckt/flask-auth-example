@@ -17,6 +17,8 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if g.user is not None and g.user.is_authenticated:
+        return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
@@ -50,8 +52,9 @@ def register():
         user = User(
             username = form.username.data,
             email = form.email.data,
-            password_hash = form.password.data
         )
+        user.hash_password(form.password.data)
+
         db.session.add(user)
         db.session.commit()
         flash('Thanks for registering')
