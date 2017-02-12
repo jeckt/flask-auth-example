@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, flash, request, g
 from flask_login import login_required, login_user, logout_user, current_user
 
-from app import app, lm
+from app import app, db, lm
 from .forms import LoginForm, RegistrationForm
 from .models import User
 
@@ -19,12 +19,21 @@ def index():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        if User.verify_password(form.username.data, form.password.data):
-            user = User(form.username.data, form.password.data)
-            login_user(user)
+        username = form.username.data
+        user = User.query.filter_by(username=username).first()
+        if user is None:
+            flash('Username "%s" not found.' % (username))
+            return redirect(url_for('login'))
 
-            flash('Logged in successfuly for {}'.format(form.username.data))
-            return redirect(request.args.get('next') or url_for('index'))
+        if not user.verify_password(form.password.data):
+            flash('Incorrect Password.')
+            return redirect(url_for('login'))
+
+        login_user(user)
+
+        flash('Logged in successfuly for {}.'.format(username))
+        return redirect(request.args.get('next') or url_for('index'))
+
     return render_template('login.html',
                            title='Sign In',
                            form=form)
@@ -38,8 +47,13 @@ def logout():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = (form.username.data, form.password.data)
-        User.user_database[form.username.data] = user
+        user = User(
+            username = form.username.data,
+            email = form.email.data,
+            password_hash = form.password.data
+        )
+        db.session.add(user)
+        db.session.commit()
         flash('Thanks for registering')
         return redirect(url_for('login'))
     return render_template('register.html',
@@ -48,7 +62,7 @@ def register():
 
 @lm.user_loader
 def load_user(id):
-    return User.get(id)
+    return User.query.get(int(id))
 
 @app.before_request
 def before_request():

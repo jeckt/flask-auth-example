@@ -2,23 +2,23 @@ from flask_login import UserMixin
 
 from app import db
 
-class User(UserMixin):
-    # proxy for a database of users
-    user_database = {"JohnDoe": ("JohnDoe", "John"),
-                     "JaneDoe": ("JaneDoe", "Jane")}
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(32), index=True, unique=True)
+    email = db.Column(db.String(35), index=True)
+    #TODO(steve): make this encrpyted
+    password_hash = db.Column(db.String(128))
 
-    def __init__(self, username, password):
-        self.id = username
-        self.password = password
+    def get_id(self):
+        try:
+            return unicode(self.id)     # python 2
+        except NameError:
+            return str(self.id)         # python 3
 
-    @classmethod
-    def get(cls, id):
-        d = cls.user_database.get(id)
-        return User(d[0], d[1])
+    def verify_password(self, password):
+        return self.password_hash == password
 
-    @classmethod
-    def verify_password(cls, username, password):
-        if username in cls.user_database:
-            return cls.user_database[username][1] == password
+    def __repr__(self):
+        return '<User %r>' % (self.username)
 
-        return False
+

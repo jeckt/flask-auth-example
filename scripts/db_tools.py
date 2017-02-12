@@ -11,6 +11,8 @@ from migrate.versioning import api
 from config import SQLALCHEMY_DATABASE_URI
 from config import SQLALCHEMY_MIGRATE_REPO
 
+from app import db, models
+
 def create():
     from app import db
 
@@ -59,6 +61,12 @@ def downgrade():
 
     print('Current database version: {}'.format(str(v)))
 
+def clean():
+    for u in models.User.query.all():
+        db.session.delete(u)
+
+    db.session.commit()
+
 if __name__ == '__main__':
     import argparse
 
@@ -76,6 +84,8 @@ if __name__ == '__main__':
                          help="Upgrade db to newer version")
     options.add_argument('--downgrade', action="store_true",
                          help="Downgrade db to older version")
+    options.add_argument('--clean', action="store_true",
+                         help="Clean all data in db")
 
     args = parser.parse_args()
 
@@ -87,5 +97,7 @@ if __name__ == '__main__':
         upgrade()
     elif args.downgrade:
         downgrade()
+    elif args.clean:
+        clean()
     else:
         print("$ python db_tools.py --help")
